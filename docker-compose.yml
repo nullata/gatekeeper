@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  gatekeeper-proxy:
+    image: gatekeeper-proxy
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+        PROXY_TARGET_URL: http://my.domain.or.address
+        DB_HOST: mariaDbHost
+        DB_PORT: 3306
+        DB_NAME: gatekeeper
+        DB_USERNAME: myUser
+        DB_PASSWORD: myUserPass
+        #RATE_LIMIT_ENABLED: "true"
+        #RATE_LIMIT_RATE: 100
+        #RATE_LIMIT_TIMEOUT: 60
+    #volumes:
+    #    - type: bind
+    #      source: /your/host/path/here/logs
+    #      target: /var/logs/gatekeeper
+    ports:
+      - "8080:8080"
