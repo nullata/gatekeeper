@@ -122,3 +122,5 @@ In this example, the API key `abc123xyz456` is sent in the `x-gate-key` header. 
 - The `KeyFetcherService` checks the API key against the `ApiTokensRepository`.
 - If the key is valid and found in the database, the request is processed; otherwise, it is rejected with an `UNAUTHORIZED` status.
 
+
+🖖
