@@ -12,11 +12,6 @@
             <spring-boot.run.jvmArguments>-noverify -XX:TieredStopAtLevel=1</spring-boot.run.jvmArguments>
             <spring-boot.run.mainClass>com.gatekeeper.Gatekeeper</spring-boot.run.mainClass>
             <Env.SPRING_OUTPUT_ANSI_ENABLED>always</Env.SPRING_OUTPUT_ANSI_ENABLED>
-            
-            
-            
-            
-            
         </properties>
     </action>
     <action>

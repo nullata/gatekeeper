@@ -1,7 +1,5 @@
 package com.gatekeeper.components;
 
-
-
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -17,9 +15,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class RateLimiter {
 
-    @Value("${rate.limit.enabled}")
-    private boolean rateLimitEnabled;
-
     @Value("${rate.limit.rate}")
     private int rateLimitRate;
 
@@ -30,14 +25,12 @@ public class RateLimiter {
 
     @PostConstruct
     public void initializeBucket() {
-        if (rateLimitEnabled) {
             Bandwidth limit = Bandwidth.classic(rateLimitRate, 
                     Refill.greedy(rateLimitRate, Duration.ofSeconds(rateLimitTimeout)));
             this.bucket = Bucket.builder().addLimit(limit).build();
-        }
     }
 
     public boolean tryConsume() {
-        return rateLimitEnabled && bucket.tryConsume(1);
+        return bucket.tryConsume(1);
     }
 }

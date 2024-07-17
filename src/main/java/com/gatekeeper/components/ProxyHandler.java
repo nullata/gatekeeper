@@ -37,7 +37,9 @@ public class ProxyHandler implements WebFilter {
     
     @Value("${PROXY_TARGET_URL:}")
     private String envTargetUrl;
-    
+
+    @Value("${rate.limit.enabled}")
+    private boolean rateLimitEnabled;
 
     public ProxyHandler(WebClient.Builder webClientBuilder, KeyFetcherService keyFetcherService,
         RateLimiter rateLimiter) {
@@ -63,12 +65,12 @@ public class ProxyHandler implements WebFilter {
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
         
-        if (!rateLimiter.tryConsume()) {
+        if (rateLimitEnabled && !rateLimiter.tryConsume()) {
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             String errorMessage = "Rate limit exceeded";
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
             return exchange.getResponse().writeWith(Mono.just(buffer));
-        }        
+        }
         
         String apiKeyHeader = exchange.getRequest().getHeaders().getFirst("x-gate-key");
         
@@ -94,7 +96,7 @@ public class ProxyHandler implements WebFilter {
                     exchange.getResponse().setStatusCode(clientResponse.statusCode());
                     exchange.getResponse().getHeaders().putAll(clientResponse.headers().asHttpHeaders());
                     
-                    logger.trace("Forwarding request: " + url);
+                    logger.info("Forwarding request: " + url);
                     return exchange.getResponse().writeWith(clientResponse.bodyToFlux(DataBuffer.class));
                 })
                 .onErrorResume(WebClientResponseException.class, ex -> {
@@ -118,6 +120,6 @@ public class ProxyHandler implements WebFilter {
         String method = exchange.getRequest().getMethodValue();
         String uri = exchange.getRequest().getURI().toString();
         String clientIp = exchange.getRequest().getRemoteAddress().toString();
-        logger.debug("Request received: method={}, uri={}, apiKey={}, clientIp={}", method, uri, apiKey, clientIp);
+        logger.trace("Request received: method={}, uri={}, apiKey={}, clientIp={}", method, uri, apiKey, clientIp);
     }
 }

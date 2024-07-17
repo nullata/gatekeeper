@@ -18,19 +18,19 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class EnvironmentValidator implements ApplicationRunner {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(EnvironmentValidator.class);
     private final Environment environment;
     private final ApplicationContext appContext;
     private final ApplicationEventPublisher eventPublisher;
-    
+
     public EnvironmentValidator(Environment environment, ApplicationContext appContext, 
             ApplicationEventPublisher eventPublisher) {
         this.environment = environment;
         this.appContext = appContext;
         this.eventPublisher = eventPublisher;
     }
-    
+
     private String validateEnvVar(String envVarName) throws EnvironmentValidationException {
         return Optional.ofNullable(environment.getProperty(envVarName))
                 .filter(s -> !s.isEmpty())
@@ -39,32 +39,32 @@ public class EnvironmentValidator implements ApplicationRunner {
     
     @Override
     public void run(ApplicationArguments args) {
-        logger.trace("Validating environment variables");
+        logger.info("Validating environment variables");
         try {
             String proxyTarget = validateEnvVar("PROXY_TARGET_URL");
-            logger.trace("PROXY_TARGET_URL set to: " + proxyTarget);
-            
-            String dbHost = validateEnvVar("DB_HOST");            
-            logger.trace("DB_HOST validated");
-            
-            String dbPort = validateEnvVar("DB_PORT");
-            logger.trace("DB_PORT validated");
-            
-            String dbName = validateEnvVar("DB_NAME");
-            logger.trace("DB_NAME validated");
-            
-            String dbUser = validateEnvVar("DB_USERNAME");
-            logger.trace("DB_USERNAME validated");
-            
-            String dbPass = validateEnvVar("DB_PASSWORD");
-            logger.trace("DB_PASSWORD validated");
-            
+            logger.info("PROXY_TARGET_URL set to: " + proxyTarget);
+
+            validateEnvVar("DB_HOST");
+            logger.info("DB_HOST validated");
+
+            validateEnvVar("DB_PORT");
+            logger.info("DB_PORT validated");
+
+            validateEnvVar("DB_NAME");
+            logger.info("DB_NAME validated");
+
+            validateEnvVar("DB_USERNAME");
+            logger.info("DB_USERNAME validated");
+
+            validateEnvVar("DB_PASSWORD");
+            logger.info("DB_PASSWORD validated");
+
         } catch (EnvironmentValidationException ex) {
             logger.error(ex.getMessage());
             SpringApplication.exit(appContext, () -> 1);
             return;
         }
-        logger.trace("Environment validation complete");
+        logger.info("Environment validation complete");
         eventPublisher.publishEvent(new ValidationCompleteEvent(this));
     }
 }
