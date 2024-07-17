@@ -58,6 +58,17 @@ public class EnvironmentValidator implements ApplicationRunner {
 
             validateEnvVar("DB_PASSWORD");
             logger.info("DB_PASSWORD validated");
+            
+            String rateLimitEnabled = validateEnvVar("RATE_LIMIT_ENABLED");
+            logger.info("RATE_LIMIT_ENABLED: " + rateLimitEnabled);
+            
+            if (rateLimitEnabled.equals("true")) {
+                String rateLimit = validateEnvVar("RATE_LIMIT_RATE");
+                logger.info("RATE_LIMIT_RATE: " + rateLimit);
+                
+                String timeout = validateEnvVar("RATE_LIMIT_TIMEOUT");
+                logger.info("RATE_LIMIT_TIMEOUT: " + timeout);
+            }
 
         } catch (EnvironmentValidationException ex) {
             logger.error(ex.getMessage());
