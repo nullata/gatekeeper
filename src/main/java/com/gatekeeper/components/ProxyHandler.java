@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class ProxyHandler implements WebFilter {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ProxyHandler.class);
     private final WebClient webClient;
     private final KeyFetcherService keyFetcherService;

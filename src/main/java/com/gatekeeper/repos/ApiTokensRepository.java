@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface ApiTokensRepository extends JpaRepository<ApiTokens, Long> {
-    
+
     Optional<ApiTokens> findByUserTokens(String userTokens);
-    
+
 }
