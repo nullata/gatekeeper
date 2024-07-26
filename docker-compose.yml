@@ -16,6 +16,9 @@ services:
         #RATE_LIMIT_ENABLED: "true"
         #RATE_LIMIT_RATE: 100
         #RATE_LIMIT_TIMEOUT: 60
+        #ENABLE_CACHING: "true"
+        #CACHE_MAX_SIZE: 100
+        #CACHE_MAX_DURATION_M: 100
     #volumes:
     #    - type: bind
     #      source: /your/host/path/here/logs

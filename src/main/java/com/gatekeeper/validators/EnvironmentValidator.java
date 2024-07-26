@@ -69,7 +69,17 @@ public class EnvironmentValidator implements ApplicationRunner {
                 String timeout = validateEnvVar("RATE_LIMIT_TIMEOUT");
                 logger.info("RATE_LIMIT_TIMEOUT: " + timeout);
             }
-
+            
+            String cachingEnabled = validateEnvVar("ENABLE_CACHING");
+            logger.info("ENABLE_CACHING: " + cachingEnabled);
+            
+            if (cachingEnabled.equals("true")) {
+                String cacheMaxSize = validateEnvVar("CACHE_MAX_SIZE");
+                logger.info("CACHE_MAX_SIZE: " + cacheMaxSize);
+            
+                String cacheMaxDur = validateEnvVar("CACHE_MAX_DURATION_M");
+                logger.info("CACHE_MAX_DURATION_M: " + cacheMaxDur);
+            }
         } catch (EnvironmentValidationException ex) {
             logger.error(ex.getMessage());
             SpringApplication.exit(appContext, () -> 1);
