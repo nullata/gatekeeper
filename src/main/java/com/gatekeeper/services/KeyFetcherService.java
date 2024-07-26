@@ -4,7 +4,8 @@ import com.gatekeeper.entity.ApiTokens;
 import com.gatekeeper.repos.ApiTokensRepository;
 import com.gatekeeper.validators.ValidationCompleteEvent;
 import java.util.Optional;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +17,12 @@ import org.springframework.stereotype.Service;
 public class KeyFetcherService {
 
     private final ApiTokensRepository apiTokensRepository;
+    private final CacheManager cacheManager;
     private boolean isValidationComplete = false;
 
-    public KeyFetcherService(ApiTokensRepository apiTokensRepository) {
+    public KeyFetcherService(ApiTokensRepository apiTokensRepository, CacheManager cacheManager) {
         this.apiTokensRepository = apiTokensRepository;
+        this.cacheManager = cacheManager;
     }
 
     @EventListener
@@ -27,12 +30,21 @@ public class KeyFetcherService {
         this.isValidationComplete = true;
     }
     
-    @Cacheable(value = "gakekeeper", key = "#requestKey")
     public boolean apiKeyValidator(String requestKey) {
         if (isValidationComplete) {
-            Optional<ApiTokens> token = apiTokensRepository.findByUserTokens(requestKey);
-            if (token.isPresent()) {
-                return true;
+            Cache cache = cacheManager.getCache("gatekeeper");
+            if (cache != null) {
+                Cache.ValueWrapper cachedValue = cache.get(requestKey);
+                if (cachedValue != null) {
+                    return (boolean) cachedValue.get();
+                }
+
+                Optional<ApiTokens> token = apiTokensRepository.findByUserTokens(requestKey);
+                boolean isValid = token.isPresent();
+                if (isValid) {
+                    cache.put(requestKey, true);
+                }
+                return isValid;
             }
         }
         return false;
