@@ -5,6 +5,7 @@ Gatekeeper is a proxy server application that ensures secure and controlled acce
 
 ## Features
 - **Rate Limiting**: Controls the rate of incoming requests.
+- **Caching**: Allows for validated values to be cached in app memory. On by default.
 - **API Key Validation**: Ensures only requests with valid API keys are processed.
 - **Environment Validation**: Verifies required environment variables are set before starting the application.
 
