@@ -1,12 +1,18 @@
 package com.gatekeeper.services;
 
-import com.gatekeeper.entity.ApiTokens;
-import com.gatekeeper.repos.ApiTokensRepository;
-import com.gatekeeper.validators.ValidationCompleteEvent;
+import com.gatekeeper.components.EnvironmentUtils;
+import com.gatekeeper.components.SpringShutdownUtil;
+import com.gatekeeper.dtos.Gatekey;
+import com.gatekeeper.events.ValidationCompleteEvent;
+import com.gatekeeper.exceptions.EnvironmentValidationException;
+import com.gatekeeper.repos.GateKeyRepository;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,20 +22,28 @@ import org.springframework.stereotype.Service;
 @Service
 public class KeyFetcherService {
 
-    private final ApiTokensRepository apiTokensRepository;
+    private static final Logger logger = LoggerFactory.getLogger(KeyFetcherService.class);
     private final CacheManager cacheManager;
-    private boolean isValidationComplete = false;
+    private final GateKeyRepository gateKeyRepository;
+    private final EnvironmentUtils environmentUtils;
+    private final SpringShutdownUtil shutdownUtil;
+    private volatile boolean isValidationComplete = false;
 
-    public KeyFetcherService(ApiTokensRepository apiTokensRepository, CacheManager cacheManager) {
-        this.apiTokensRepository = apiTokensRepository;
+    public KeyFetcherService(CacheManager cacheManager,
+            GateKeyRepository gateKeyRepository,
+            EnvironmentUtils environmentUtils,
+            SpringShutdownUtil shutdownUtil) {
         this.cacheManager = cacheManager;
+        this.gateKeyRepository = gateKeyRepository;
+        this.environmentUtils = environmentUtils;
+        this.shutdownUtil = shutdownUtil;
     }
 
     @EventListener
     public void onValidationComplete(ValidationCompleteEvent event) {
         this.isValidationComplete = true;
     }
-    
+
     public boolean apiKeyValidator(String requestKey) {
         if (isValidationComplete) {
             Cache cache = cacheManager.getCache("gatekeeper");
@@ -38,13 +52,21 @@ public class KeyFetcherService {
                 if (cachedValue != null) {
                     return (boolean) cachedValue.get();
                 }
+                String table = "", column = "";
+                try {
+                    table = environmentUtils.validateEnvVar("TABLE_NAME");
+                    column = environmentUtils.validateEnvVar("COLUMN_NAME");
 
-                Optional<ApiTokens> token = apiTokensRepository.findByUserTokens(requestKey);
-                boolean isValid = token.isPresent();
-                if (isValid) {
-                    cache.put(requestKey, true);
+                    Optional<Gatekey> gatekey = Optional.ofNullable(gateKeyRepository.findByKey(table, column, requestKey));
+                    boolean isValid = gatekey.isPresent();
+                    if (isValid) {
+                        cache.put(requestKey, true);
+                    }
+                    return isValid;
+                } catch (EnvironmentValidationException | DataAccessException ex) {
+                    logger.error(ex.getMessage());
+                    shutdownUtil.shutDownSpringApp();
                 }
-                return isValid;
             }
         }
         return false;

@@ -1,4 +1,4 @@
-package com.gatekeeper.validators;
+package com.gatekeeper.events;
 
 import org.springframework.context.ApplicationEvent;
 

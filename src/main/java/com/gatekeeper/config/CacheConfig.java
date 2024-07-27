@@ -18,18 +18,18 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "enable.caching", havingValue = "true")
 @EnableCaching
 public class CacheConfig {
-    
+
     @Value("${cache.max.size}")
     private int cacheMaxSize;
-    
+
     @Value("${cache.max.duration}")
     private int cacheMaxDuration;
 
     @Bean
     public Caffeine<Object, Object> caffeineConfig() {
         return Caffeine.newBuilder()
-            .expireAfterWrite(cacheMaxSize, TimeUnit.MINUTES)
-            .maximumSize(cacheMaxDuration);
+                .expireAfterWrite(cacheMaxSize, TimeUnit.MINUTES)
+                .maximumSize(cacheMaxDuration);
     }
 
     @Bean

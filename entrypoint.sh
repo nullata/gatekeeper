@@ -9,11 +9,14 @@ function validateVar {
 }
 
 validateVar "PROXY_TARGET_URL"
+validateVar "DB_TYPE"
 validateVar "DB_HOST"
 validateVar "DB_PORT"
 validateVar "DB_NAME"
 validateVar "DB_USERNAME"
 validateVar "DB_PASSWORD"
+validateVar "TABLE_NAME"
+validateVar "COLUMN_NAME"
 
 JAR_FILE=/gatekeeper/Gatekeeper-0.0.1-SNAPSHOT.jar
 

@@ -1,7 +1,7 @@
 # Gatekeeper Proxy Server
 
 ## Overview
-Gatekeeper is a proxy server application that ensures secure and controlled access to backend services. It enforces rate limiting, API key validation, and environment validation before forwarding requests to a target URL.
+Gatekeeper is a proxy server application that ensures secure and controlled access to backend services. It enforces rate limiting, API key validation, and environment validation against a database before forwarding requests to a target URL. If a request key cannot be validated, Gatekeeper will return a `401 Unauthorized` response.
 
 ## Features
 - **Rate Limiting**: Controls the rate of incoming requests.
@@ -31,24 +31,30 @@ Gatekeeper is a proxy server application that ensures secure and controlled acce
 Configure the following environment variables before starting the application:
 
 - `PROXY_TARGET_URL`: The URL to which requests will be forwarded.
+- `DB_TYPE`: Database type (e.g., `mariadb`, `mysql`, `postgres`, `db2`, `mssql`, `sqlite`).
 - `DB_HOST`: Database host.
 - `DB_PORT`: Database port.
 - `DB_NAME`: Database name.
 - `DB_USERNAME`: Database username.
 - `DB_PASSWORD`: Database password.
+- `TABLE_NAME`: Database table name containing API keys.
+- `COLUMN_NAME`: Column name in the table containing API keys.
 
 ### Database
-This application supports a MariaDB database. The provided `ddl-gatekeeper-example.sql` file, the `ApiTokens` entity class and the `KeyFetcherService` serve as placeholders for developers to extend upon. These can be customized to suit specific application requirements.
+This application supports multiple databases including MariaDB, MySQL, PostgreSQL, DB2, MSSQL, and SQLite. The provided `ddl-gatekeeper-example.sql` file provides an example of the required baseline database structure against which user key tokens will be validated.
 
-### Additional configurations
+### Additional Configurations
 
-- `RATE_LIMIT_ENABLED`: Optional. Determines whether the rate limiter is enabled. String: `"true"`|`"false"`. Default: `"false"`
-- `RATE_LIMIT_RATE`: Rate limit threshold. Int value.
-- `RATE_LIMIT_TIMEOUT`: Rate limit timeout period (seconds). Int value.
+- `RATE_LIMIT_ENABLED`: Optional. Determines whether the rate limiter is enabled. String: `"true"`|`"false"`. Default: `"false"`.
+- `RATE_LIMIT_RATE`: Optional. Rate limit threshold. Int value. Default: `100`.
+- `RATE_LIMIT_TIMEOUT`: Optional. Rate limit timeout period (seconds). Int value. Default: `10`.
+
+- `ENABLE_CACHING`: Optional. Determines whether the caching feature is enabled, where user key tokens are stored in a memory cache once validated. String: `"true"`|`"false"`. Default: `true`.
+- `CACHE_MAX_SIZE`: Optional. The maximum number of keys that can be stored in cache at once. Only taken into account if caching is enabled. Int value. Default: `100`.
+- `CACHE_MAX_DURATION_M`: Optional. The maximum duration (in minutes) that individual keys are stored in the cache. Only taken into account if caching is enabled. Int value. Default: `10`.
 
 #### Volumes
-You can attach a volume for application logs which in the container are stored in `/var/logs/gatekeeper`. Refer to `entrypoint.sh`
-
+You can attach a volume for application logs which, in the container, are stored in `/var/log/gatekeeper`. Refer to `entrypoint.sh`.
 
 ## Usage
 Once the application has been built, start the application using Docker Compose:
@@ -76,52 +82,6 @@ x-gate-key: abc123xyz456
 - `x-gate-key: abc123xyz456`: The custom header containing the API key `abc123xyz456` for validation.
 
 In this example, the API key `abc123xyz456` is sent in the `x-gate-key` header. The server will use this key to validate the client's request based on the validation process described earlier. If the key is valid, the server will process the request; otherwise, it will return an `UNAUTHORIZED` response.
-
-## Functionality
-### Validation Process in the Application
-
-1. **Header Extraction**: In the `ProxyHandler` class, the `x-gate-key` header is extracted from the incoming request:
-   ```java
-   String apiKeyHeader = exchange.getRequest().getHeaders().getFirst("x-gate-key");
-   ```
-
-2. **API Key Validation**: The extracted API key is then validated using the `KeyFetcherService`:
-   ```java
-   if (apiKeyHeader == null || !keyFetcherService.apiKeyValidator(apiKeyHeader)) {
-       exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-       return exchange.getResponse().setComplete();
-   }
-   ```
-
-3. **KeyFetcherService Logic**: In `KeyFetcherService`, the method `apiKeyValidator` checks the validity of the API key:
-   ```java
-   public boolean apiKeyValidator(String requestKey) {
-       if (isValidationComplete) {
-           Optional<ApiTokens> token = apiTokensRepository.findByUserTokens(requestKey);
-           return token.isPresent();
-       }
-       return false;
-   }
-   ```
-
-4. **Database Check**: The `ApiTokensRepository` is used to look up the API key in the database:
-   ```java
-   Optional<ApiTokens> findByUserTokens(String userTokens);
-   ```
-
-5. **Entity Class**: The `ApiTokens` entity class represents the database table where API tokens are stored:
-   ```java
-   @Entity
-   @Table(name = "api_tokens")
-   public class ApiTokens implements Serializable {
-       // ...
-   }
-   ```
-### Summary
-- Remote clients must submit the `x-gate-key` HTTP header with their API key.
-- The `ProxyHandler` extracts and validates the API key using the `KeyFetcherService`.
-- The `KeyFetcherService` checks the API key against the `ApiTokensRepository`.
-- If the key is valid and found in the database, the request is processed; otherwise, it is rejected with an `UNAUTHORIZED` status.
 
 ## TODO
 Maybe tests someday. Maybe.

@@ -1,7 +1,8 @@
 package com.gatekeeper.components;
 
+import com.gatekeeper.events.ValidationCompleteEvent;
 import com.gatekeeper.services.KeyFetcherService;
-import com.gatekeeper.validators.ValidationCompleteEvent;
+import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,6 @@ import reactor.core.publisher.Mono;
  *
  * @author null
  */
-
 @Component
 public class ProxyHandler implements WebFilter {
 
@@ -31,10 +31,10 @@ public class ProxyHandler implements WebFilter {
     private final WebClient webClient;
     private final KeyFetcherService keyFetcherService;
     private final RateLimiter rateLimiter;
-    
-    private boolean isValidationComplete = false;
+
+    private volatile boolean isValidationComplete = false;
     private String targetUrl;
-    
+
     @Value("${PROXY_TARGET_URL:}")
     private String envTargetUrl;
 
@@ -42,12 +42,12 @@ public class ProxyHandler implements WebFilter {
     private boolean rateLimitEnabled;
 
     public ProxyHandler(WebClient.Builder webClientBuilder, KeyFetcherService keyFetcherService,
-        RateLimiter rateLimiter) {
+            RateLimiter rateLimiter) {
         this.webClient = webClientBuilder.build();
         this.keyFetcherService = keyFetcherService;
         this.rateLimiter = rateLimiter;
     }
-    
+
     @EventListener
     public void onValidationComplete(ValidationCompleteEvent event) {
         this.isValidationComplete = true;
@@ -60,20 +60,20 @@ public class ProxyHandler implements WebFilter {
             exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
             String errorMessage = "Service not started due to runtime validation issues";
             logger.error(errorMessage);
-            
+
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
-        
+
         if (rateLimitEnabled && !rateLimiter.tryConsume()) {
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             String errorMessage = "Rate limit exceeded";
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
-        
+
         String apiKeyHeader = exchange.getRequest().getHeaders().getFirst("x-gate-key");
-        
+
         debugLogRequest(exchange, apiKeyHeader);
 
         if (apiKeyHeader == null || !keyFetcherService.apiKeyValidator(apiKeyHeader)) {
@@ -95,31 +95,35 @@ public class ProxyHandler implements WebFilter {
                 .exchangeToMono(clientResponse -> {
                     exchange.getResponse().setStatusCode(clientResponse.statusCode());
                     exchange.getResponse().getHeaders().putAll(clientResponse.headers().asHttpHeaders());
-                    
+
                     logger.info("Forwarding request: " + url);
                     return exchange.getResponse().writeWith(clientResponse.bodyToFlux(DataBuffer.class));
                 })
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     exchange.getResponse().setStatusCode(ex.getStatusCode());
-                    
+
                     logger.error("Could not forward request: " + ex.getMessage());
                     return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
-                        .bufferFactory().wrap(ex.getResponseBodyAsByteArray())));
+                            .bufferFactory().wrap(ex.getResponseBodyAsByteArray())));
                 })
                 .onErrorResume(Exception.class, ex -> {
                     exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
                     String errorMessage = "Service Not Available";
                     logger.error("Could not forward request: " + ex.getMessage());
-                    
+
                     DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
                     return exchange.getResponse().writeWith(Mono.just(buffer));
                 });
     }
-    
+
     private void debugLogRequest(ServerWebExchange exchange, String apiKey) {
         String method = exchange.getRequest().getMethodValue();
         String uri = exchange.getRequest().getURI().toString();
-        String clientIp = exchange.getRequest().getRemoteAddress().toString();
+        InetSocketAddress remoteAddr = exchange.getRequest().getRemoteAddress();
+        String clientIp = "null";
+        if (remoteAddr != null) {
+            clientIp = remoteAddr.toString();
+        }
         logger.trace("Request received: method={}, uri={}, apiKey={}, clientIp={}", method, uri, apiKey, clientIp);
     }
 }

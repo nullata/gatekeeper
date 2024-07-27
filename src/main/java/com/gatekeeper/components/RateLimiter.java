@@ -25,9 +25,9 @@ public class RateLimiter {
 
     @PostConstruct
     public void initializeBucket() {
-            Bandwidth limit = Bandwidth.classic(rateLimitRate, 
-                    Refill.greedy(rateLimitRate, Duration.ofSeconds(rateLimitTimeout)));
-            this.bucket = Bucket.builder().addLimit(limit).build();
+        Bandwidth limit = Bandwidth.classic(rateLimitRate,
+                Refill.greedy(rateLimitRate, Duration.ofSeconds(rateLimitTimeout)));
+        this.bucket = Bucket.builder().addLimit(limit).build();
     }
 
     public boolean tryConsume() {
