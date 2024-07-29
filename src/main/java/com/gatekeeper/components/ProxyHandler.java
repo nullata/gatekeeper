@@ -65,14 +65,14 @@ public class ProxyHandler implements WebFilter {
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
 
-        if (rateLimitEnabled && !rateLimiter.tryConsume()) {
+        String apiKeyHeader = exchange.getRequest().getHeaders().getFirst("x-gate-key");
+
+        if (rateLimitEnabled && !rateLimiter.tryConsume(apiKeyHeader)) {
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             String errorMessage = "Rate limit exceeded";
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
-
-        String apiKeyHeader = exchange.getRequest().getHeaders().getFirst("x-gate-key");
 
         debugLogRequest(exchange, apiKeyHeader);
 

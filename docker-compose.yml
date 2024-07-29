@@ -1,5 +1,5 @@
  version: '3.8'
- 
+
  services:
    gatekeeper-proxy:
      image: gatekeeper-proxy
@@ -19,6 +19,7 @@
          # RATE_LIMIT_ENABLED: "true"
          # RATE_LIMIT_RATE: 100
          # RATE_LIMIT_TIMEOUT: 60
+         # RATE_LIMIT_MODE: global
          # ENABLE_CACHING: "true"
          # CACHE_MAX_SIZE: 100
          # CACHE_MAX_DURATION_M: 10
