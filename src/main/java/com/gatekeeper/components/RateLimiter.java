@@ -1,5 +1,6 @@
 package com.gatekeeper.components;
 
+import com.gatekeeper.config.Constants;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -35,9 +36,9 @@ public class RateLimiter {
     }
     
     public boolean tryConsume(String apiKey) {
-        if (rateLimitMode.equalsIgnoreCase("global")) {
+        if (rateLimitMode.equalsIgnoreCase(Constants.OPT_RLM_GLOBAL)) {
             return globalBucket.tryConsume(1);
-        } else if (rateLimitMode.equalsIgnoreCase("individual")) {
+        } else if (rateLimitMode.equalsIgnoreCase(Constants.OPT_RLM_INDI)) {
             return keyBuckets.computeIfAbsent(apiKey, k -> createNewBucket()).tryConsume(1);
         }
         return false;

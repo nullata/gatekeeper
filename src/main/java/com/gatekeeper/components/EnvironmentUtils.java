@@ -1,5 +1,6 @@
 package com.gatekeeper.components;
 
+import com.gatekeeper.config.Constants;
 import com.gatekeeper.exceptions.EnvironmentValidationException;
 import java.util.Optional;
 import org.springframework.core.env.Environment;
@@ -24,7 +25,7 @@ public class EnvironmentUtils {
 
     public String validateEnvVar(String envVarName) throws EnvironmentValidationException {
         return getEnvVar(envVarName)
-                .orElseThrow(() -> new EnvironmentValidationException("Environment variable validation failed: " + envVarName));
+                .orElseThrow(() -> new EnvironmentValidationException(String.format(Constants.ERR_ENV_VAR_VAL_FAIL, envVarName)));
     }
 
 }

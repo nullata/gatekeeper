@@ -2,6 +2,7 @@ package com.gatekeeper.services;
 
 import com.gatekeeper.components.EnvironmentUtils;
 import com.gatekeeper.components.SpringShutdownUtil;
+import com.gatekeeper.config.Constants;
 import com.gatekeeper.dtos.Gatekey;
 import com.gatekeeper.events.ValidationCompleteEvent;
 import com.gatekeeper.exceptions.EnvironmentValidationException;
@@ -46,7 +47,7 @@ public class KeyFetcherService {
 
     public boolean apiKeyValidator(String requestKey) {
         if (isValidationComplete) {
-            Cache cache = cacheManager.getCache("gatekeeper");
+            Cache cache = cacheManager.getCache(Constants.APP_NAME);
             if (cache != null) {
                 Cache.ValueWrapper cachedValue = cache.get(requestKey);
                 if (cachedValue != null) {
@@ -54,8 +55,8 @@ public class KeyFetcherService {
                 }
                 String table = "", column = "";
                 try {
-                    table = environmentUtils.validateEnvVar("TABLE_NAME");
-                    column = environmentUtils.validateEnvVar("COLUMN_NAME");
+                    table = environmentUtils.validateEnvVar(Constants.ENV_DB_TABLE);
+                    column = environmentUtils.validateEnvVar(Constants.ENV_DB_COLUMN);
 
                     Optional<Gatekey> gatekey = Optional.ofNullable(gateKeyRepository.findByKey(table, column, requestKey));
                     boolean isValid = gatekey.isPresent();

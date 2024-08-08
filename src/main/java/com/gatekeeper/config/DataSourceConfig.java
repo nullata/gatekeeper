@@ -39,7 +39,7 @@ public class DataSourceConfig {
     public DataSource dataSource() {
         String dbType = "", url = "";
         try {
-            dbType = environmentUtils.validateEnvVar("DB_TYPE");
+            dbType = environmentUtils.validateEnvVar(Constants.ENV_DB_TYPE);
             url = buildDataSourceUrl(dbType);
             
         } catch (EnvironmentValidationException ex) {
@@ -58,9 +58,9 @@ public class DataSourceConfig {
 
     private String buildDataSourceUrl(String dbType) throws EnvironmentValidationException, 
             UnsupportedbTypeException {
-        String host = environmentUtils.validateEnvVar("DB_HOST");
-        String port = environmentUtils.validateEnvVar("DB_PORT");
-        String name = environmentUtils.validateEnvVar("DB_NAME");
+        String host = environmentUtils.validateEnvVar(Constants.ENV_DB_HOST);
+        String port = environmentUtils.validateEnvVar(Constants.ENV_DB_PORT);
+        String name = environmentUtils.validateEnvVar(Constants.ENV_DB_NAME);
 
         switch (dbType.toLowerCase()) {
             case "mariadb" -> {

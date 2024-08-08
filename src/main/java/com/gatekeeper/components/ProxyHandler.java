@@ -1,5 +1,6 @@
 package com.gatekeeper.components;
 
+import com.gatekeeper.config.Constants;
 import com.gatekeeper.events.ValidationCompleteEvent;
 import com.gatekeeper.services.KeyFetcherService;
 import java.net.InetSocketAddress;
@@ -58,18 +59,18 @@ public class ProxyHandler implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         if (!isValidationComplete) {
             exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
-            String errorMessage = "Service not started due to runtime validation issues";
+            String errorMessage = Constants.ERR_SERVICE_VAL_FAIL;
             logger.error(errorMessage);
 
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
 
-        String apiKeyHeader = exchange.getRequest().getHeaders().getFirst("x-gate-key");
+        String apiKeyHeader = exchange.getRequest().getHeaders().getFirst(Constants.KEY_HEADER);
 
         if (rateLimitEnabled && !rateLimiter.tryConsume(apiKeyHeader)) {
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-            String errorMessage = "Rate limit exceeded";
+            String errorMessage = Constants.ERR_RATE_LIMIT_EXCEEDED;
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
             return exchange.getResponse().writeWith(Mono.just(buffer));
         }
@@ -96,22 +97,21 @@ public class ProxyHandler implements WebFilter {
                     exchange.getResponse().setStatusCode(clientResponse.statusCode());
                     exchange.getResponse().getHeaders().putAll(clientResponse.headers().asHttpHeaders());
 
-                    logger.info("Forwarding request: " + url);
+                    logger.info(String.format(Constants.MSG_REQEUST_FWD, url));
                     return exchange.getResponse().writeWith(clientResponse.bodyToFlux(DataBuffer.class));
                 })
                 .onErrorResume(WebClientResponseException.class, ex -> {
                     exchange.getResponse().setStatusCode(ex.getStatusCode());
 
-                    logger.error("Could not forward request: " + ex.getMessage());
+                    logger.error(String.format(Constants.ERR_REQUEST_FWD_FAIL, ex.getMessage()));
                     return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
                             .bufferFactory().wrap(ex.getResponseBodyAsByteArray())));
                 })
                 .onErrorResume(Exception.class, ex -> {
                     exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
-                    String errorMessage = "Service Not Available";
-                    logger.error("Could not forward request: " + ex.getMessage());
+                    logger.error(String.format(Constants.ERR_REQUEST_FWD_FAIL, ex.getMessage()));
 
-                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(errorMessage.getBytes());
+                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(Constants.ERR_SVC_NOT_AVAILABLE.getBytes());
                     return exchange.getResponse().writeWith(Mono.just(buffer));
                 });
     }

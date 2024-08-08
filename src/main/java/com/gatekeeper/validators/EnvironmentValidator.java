@@ -2,6 +2,7 @@ package com.gatekeeper.validators;
 
 import com.gatekeeper.components.EnvironmentUtils;
 import com.gatekeeper.components.SpringShutdownUtil;
+import com.gatekeeper.config.Constants;
 import com.gatekeeper.events.ValidationCompleteEvent;
 import com.gatekeeper.exceptions.EnvironmentValidationException;
 import java.util.Optional;
@@ -56,130 +57,137 @@ public class EnvironmentValidator implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        logger.info("Validating environment variables");
+        logger.info(Constants.MSG_VALIDATION_START);
         try {
             ////////////////
             // REQUIRED
             ////////////////
-            String proxyTarget = environmentUtils.validateEnvVar("PROXY_TARGET_URL");
-            logger.info("PROXY_TARGET_URL set to: " + proxyTarget);
+            String proxyTarget = environmentUtils.validateEnvVar(Constants.ENV_PROXY_TARGET_URL);
+            logger.info(envVarPrintValue(Constants.ENV_PROXY_TARGET_URL, proxyTarget));
 
-            String dbType = environmentUtils.validateEnvVar("DB_TYPE");
-            logger.info("DB_TYPE:" + dbType);
+            String dbType = environmentUtils.validateEnvVar(Constants.ENV_DB_TYPE);
+            logger.info(envVarPrintValue(Constants.ENV_DB_TYPE, dbType));
 
-            environmentUtils.validateEnvVar("DB_HOST");
-            logger.info("DB_HOST validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_HOST);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_HOST));
 
-            environmentUtils.validateEnvVar("DB_PORT");
-            logger.info("DB_PORT validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_PORT);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_PORT));
 
-            environmentUtils.validateEnvVar("DB_NAME");
-            logger.info("DB_NAME validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_NAME);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_NAME));
 
-            environmentUtils.validateEnvVar("DB_USERNAME");
-            logger.info("DB_USERNAME validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_USER);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_USER));
 
-            environmentUtils.validateEnvVar("DB_PASSWORD");
-            logger.info("DB_PASSWORD validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_PASS);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_PASS));
 
-            environmentUtils.validateEnvVar("TABLE_NAME");
-            logger.info("TABLE_NAME validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_TABLE);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_TABLE));
 
-            environmentUtils.validateEnvVar("COLUMN_NAME");
-            logger.info("COLUMN_NAME validated");
+            environmentUtils.validateEnvVar(Constants.ENV_DB_COLUMN);
+            logger.info(envVarValidatedMsg(Constants.ENV_DB_COLUMN));
 
             ////////////////
             // RATE LIMITER
             ////////////////
-            Optional<String> rateLimitEnabled = environmentUtils.getEnvVar("RATE_LIMIT_ENABLED");
+            Optional<String> rateLimitEnabled = environmentUtils.getEnvVar(Constants.ENV_RATE_LIMIT_ENABLED);
             if (rateLimitEnabled.isPresent()) {
                 switch (rateLimitEnabled.get().toLowerCase()) {
-                    case "true" -> {
-                        logger.info("RATE_LIMIT_ENABLED: " + rateLimitEnabled.get());
-                        Optional<String> rateLimit = environmentUtils.getEnvVar("RATE_LIMIT_RATE");
+                    case Constants.OPT_STR_TRUE -> {
+                        logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_ENABLED, rateLimitEnabled.get()));
+                        Optional<String> rateLimit = environmentUtils.getEnvVar(Constants.ENV_RATE_LIMIT_RATE);
                         if (rateLimit.isPresent()) {
-                            parseNumericValues("RATE_LIMIT_RATE", rateLimit.get());
-                            logger.info("RATE_LIMIT_RATE: " + rateLimit.get());
+                            parseNumericValues(Constants.ENV_RATE_LIMIT_RATE, rateLimit.get());
+                            logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_RATE, rateLimit.get()));
                         } else {
-                            logger.info("RATE_LIMIT_RATE: " + confRateLimitRate);
+                            logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_RATE,
+                                    String.valueOf(confRateLimitRate)));
                         }
 
-                        Optional<String> timeout = environmentUtils.getEnvVar("RATE_LIMIT_TIMEOUT");
+                        Optional<String> timeout = environmentUtils.getEnvVar(Constants.ENV_RATE_LIMIT_TIMEOUT);
                         if (timeout.isPresent()) {
-                            parseNumericValues("RATE_LIMIT_TIMEOUT", timeout.get());
-                            logger.info("RATE_LIMIT_TIMEOUT: " + timeout.get());
+                            parseNumericValues(Constants.ENV_RATE_LIMIT_TIMEOUT, timeout.get());
+                            logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_TIMEOUT, timeout.get()));
                         } else {
-                            logger.info("RATE_LIMIT_TIMEOUT: " + confRateLimitTimeout);
+                            logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_TIMEOUT,
+                                    String.valueOf(confRateLimitTimeout)));
                         }
 
-                        Optional<String> mode = environmentUtils.getEnvVar("RATE_LIMIT_MODE");
+                        Optional<String> mode = environmentUtils.getEnvVar(Constants.ENV_RATE_LIMIT_MODE);
                         if (mode.isPresent()) {
-                            if (mode.get().equalsIgnoreCase("global")
-                                    || mode.get().equalsIgnoreCase("individual")) {
-                                logger.info("RATE_LIMIT_MODE: " + mode.get());
+                            if (mode.get().equalsIgnoreCase(Constants.OPT_RLM_GLOBAL)
+                                    || mode.get().equalsIgnoreCase(Constants.OPT_RLM_INDI)) {
+                                logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_MODE, mode.get()));
                             } else {
-                                throw new EnvironmentValidationException("Unsupported value for RATE_LIMIT_MODE: " + mode.get());
+                                throw new EnvironmentValidationException(String.format(Constants.ERR_UNSUPPORTED_VALUE,
+                                        Constants.ENV_RATE_LIMIT_MODE, mode.get()));
                             }
                         } else {
-                            logger.info("RATE_LIMIT_MODE: " + rateLimitMode);
+                            logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_MODE, rateLimitMode));
                         }
                         break;
                     }
-                    case "false" -> {
-                        logger.info("RATE_LIMIT_ENABLED: " + rateLimitEnabled.get());
+                    case Constants.OPT_STR_FALSE -> {
+                        logger.info(envVarPrintValue(Constants.ENV_RATE_LIMIT_ENABLED, rateLimitEnabled.get()));
                         break;
                     }
                     default ->
-                        throw new EnvironmentValidationException("Unsupported value for RATE_LIMIT_ENABLED: " + rateLimitEnabled.get());
+                        throw new EnvironmentValidationException(String.format(Constants.ERR_UNSUPPORTED_VALUE,
+                                Constants.ENV_RATE_LIMIT_ENABLED, rateLimitEnabled.get()));
                 }
             } else {
-                logger.info("RATE_LIMIT_ENABLED set to default: " + confRateLimitEnabled);
+                logger.info(envVarDefaultVal(Constants.ENV_RATE_LIMIT_ENABLED, confRateLimitEnabled));
             }
 
             ////////////////
             // CACHING
             ////////////////
-            Optional<String> cachingEnabled = environmentUtils.getEnvVar("ENABLE_CACHING");
+            Optional<String> cachingEnabled = environmentUtils.getEnvVar(Constants.ENV_ENABLE_CACHING);
             if (cachingEnabled.isPresent()) {
                 switch (cachingEnabled.get().toLowerCase()) {
-                    case "true" -> {
-                        logger.info("ENABLE_CACHING: " + cachingEnabled.get());
-                        if (cachingEnabled.get().equals("true")) {
-                            Optional<String> cacheMaxSize = environmentUtils.getEnvVar("CACHE_MAX_SIZE");
+                    case Constants.OPT_STR_TRUE -> {
+                        logger.info(envVarPrintValue(Constants.ENV_ENABLE_CACHING, cachingEnabled.get()));
+                        if (cachingEnabled.get().equals(Constants.OPT_STR_TRUE)) {
+                            Optional<String> cacheMaxSize = environmentUtils.getEnvVar(Constants.ENV_CACHE_MAX_SIZE);
                             if (cacheMaxSize.isPresent()) {
-                                parseNumericValues("CACHE_MAX_SIZE", cacheMaxSize.get());
-                                logger.info("CACHE_MAX_SIZE: " + cacheMaxSize.get());
+                                parseNumericValues(Constants.ENV_CACHE_MAX_SIZE, cacheMaxSize.get());
+                                logger.info(envVarPrintValue(Constants.ENV_CACHE_MAX_SIZE, cacheMaxSize.get()));
                             } else {
-                                logger.info("CACHE_MAX_SIZE set to default: " + confCacheMaxSize);
+                                logger.info(envVarDefaultVal(Constants.ENV_CACHE_MAX_SIZE,
+                                        String.valueOf(confCacheMaxSize)));
                             }
 
-                            Optional<String> cacheMaxDur = environmentUtils.getEnvVar("CACHE_MAX_DURATION_M");
+                            Optional<String> cacheMaxDur = environmentUtils.getEnvVar(Constants.ENV_CACHE_MAX_DURATION);
                             if (cacheMaxDur.isPresent()) {
-                                parseNumericValues("CACHE_MAX_DURATION_M", cacheMaxDur.get());
-                                logger.info("CACHE_MAX_DURATION_M: " + cacheMaxDur.get());
+                                parseNumericValues(Constants.ENV_CACHE_MAX_DURATION, cacheMaxDur.get());
+                                logger.info(envVarPrintValue(Constants.ENV_CACHE_MAX_DURATION, cacheMaxDur.get()));
                             } else {
-                                logger.info("CACHE_MAX_DURATION_M set to default: " + confCacheMaxDuration);
+                                logger.info(envVarDefaultVal(Constants.ENV_CACHE_MAX_DURATION,
+                                        String.valueOf(confCacheMaxDuration)));
                             }
                         }
                         break;
                     }
-                    case "false" -> {
-                        logger.info("ENABLE_CACHING: " + cachingEnabled.get());
+                    case Constants.OPT_STR_FALSE -> {
+                        logger.info(envVarPrintValue(Constants.ENV_ENABLE_CACHING, cachingEnabled.get()));
                         break;
                     }
                     default ->
-                        throw new EnvironmentValidationException("Unsupported value for ENABLE_CACHING: " + cachingEnabled.get());
+                        throw new EnvironmentValidationException(String.format(Constants.ERR_UNSUPPORTED_VALUE,
+                                Constants.ENV_ENABLE_CACHING, cachingEnabled.get()));
                 }
             } else {
-                logger.info("ENABLE_CACHING set to default: " + confEnableCaching);
-                logger.info("CACHE_MAX_SIZE set to default: " + confCacheMaxSize);
-                logger.info("CACHE_MAX_DURATION_M set to default: " + confCacheMaxDuration);
+                logger.info(envVarDefaultVal(Constants.ENV_ENABLE_CACHING, confEnableCaching));
+                logger.info(envVarDefaultVal(Constants.ENV_CACHE_MAX_SIZE, String.valueOf(confCacheMaxSize)));
+                logger.info(envVarDefaultVal(Constants.ENV_CACHE_MAX_DURATION, String.valueOf(confCacheMaxDuration)));
             }
         } catch (EnvironmentValidationException ex) {
             logger.error(ex.getMessage());
             shutdownUtil.shutDownSpringApp();
         }
-        logger.info("Environment validation complete");
+        logger.info(Constants.MSG_VALIDATION_END);
         eventPublisher.publishEvent(new ValidationCompleteEvent(this));
     }
 
@@ -187,7 +195,19 @@ public class EnvironmentValidator implements ApplicationRunner {
         try {
             Integer.valueOf(value);
         } catch (NumberFormatException ex) {
-            throw new EnvironmentValidationException("Provided value for " + envVarName + " is not numeric: " + value);
+            throw new EnvironmentValidationException(String.format(Constants.ERR_VALUE_NOT_NUMERIC, envVarName, value));
         }
+    }
+
+    private String envVarValidatedMsg(String varName) {
+        return varName + " validated";
+    }
+
+    private String envVarPrintValue(String varName, String value) {
+        return varName + ": " + value;
+    }
+
+    private String envVarDefaultVal(String varName, String value) {
+        return envVarPrintValue(varName + " set to default", value);
     }
 }
