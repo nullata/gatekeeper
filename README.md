@@ -22,8 +22,8 @@ Gatekeeper is a proxy server application that ensures secure and controlled acce
     git clone https://github.com/nullata/gatekeeper.git
     cd gatekeeper
     ```
-
-2. Build and deploy the application:
+2. Configure your `docker-compose.yml` via the provided template.
+3. Build and deploy the application:
     ```bash
     ./build-install.sh
     ```
