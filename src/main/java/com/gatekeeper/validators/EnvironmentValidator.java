@@ -1,10 +1,14 @@
 package com.gatekeeper.validators;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gatekeeper.components.EnvironmentUtils;
 import com.gatekeeper.components.SpringShutdownUtil;
 import com.gatekeeper.config.Constants;
 import com.gatekeeper.events.ValidationCompleteEvent;
 import com.gatekeeper.exceptions.EnvironmentValidationException;
+import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +29,9 @@ public class EnvironmentValidator implements ApplicationRunner {
     private final SpringShutdownUtil shutdownUtil;
     private final EnvironmentUtils environmentUtils;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Value("${load.balance.mode}")
+    private String loadBalanceMode;
 
     @Value("${enable.caching}")
     private String confEnableCaching;
@@ -63,7 +70,25 @@ public class EnvironmentValidator implements ApplicationRunner {
             // REQUIRED
             ////////////////
             String proxyTarget = environmentUtils.validateEnvVar(Constants.ENV_PROXY_TARGET_URL);
-            logger.info(envVarPrintValue(Constants.ENV_PROXY_TARGET_URL, proxyTarget));
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<String> targets = objectMapper.readValue(proxyTarget, new TypeReference<List<String>>() {
+            });
+            logger.info(envVarPrintValue(Constants.ENV_PROXY_TARGET_URL, targets.toString()));
+
+            Optional<String> lb = environmentUtils.getEnvVar(Constants.ENV_LB_MODE);
+            if (lb.isPresent()) {
+                switch (lb.get()) {
+                    case Constants.OPT_LB_RR, Constants.OPT_LB_IPH -> {
+                        logger.info(envVarPrintValue(Constants.ENV_LB_MODE, lb.get()));
+                        break;
+                    }
+                    default ->
+                        throw new EnvironmentValidationException(String.format(Constants.ERR_UNSUPPORTED_VALUE,
+                                Constants.ENV_LB_MODE, lb));
+                }
+            } else {
+                logger.info(envVarDefaultVal(Constants.ENV_LB_MODE, loadBalanceMode));
+            }
 
             String dbType = environmentUtils.validateEnvVar(Constants.ENV_DB_TYPE);
             logger.info(envVarPrintValue(Constants.ENV_DB_TYPE, dbType));
@@ -185,6 +210,9 @@ public class EnvironmentValidator implements ApplicationRunner {
             }
         } catch (EnvironmentValidationException ex) {
             logger.error(ex.getMessage());
+            shutdownUtil.shutDownSpringApp();
+        } catch (IOException ex) {
+            logger.error(String.format(Constants.ERR_PARSE_TARG_FAIL, Constants.ENV_PROXY_TARGET_URL));
             shutdownUtil.shutDownSpringApp();
         }
         logger.info(Constants.MSG_VALIDATION_END);

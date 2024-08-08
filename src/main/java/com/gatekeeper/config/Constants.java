@@ -16,7 +16,6 @@ public class Constants {
     public static final String MSG_VALIDATION_START = "Validating environment variables";
     public static final String MSG_VALIDATION_END = "Environment validation complete";
     public static final String MSG_REQEUST_FWD = "Forwarding request: %s";
-    
 
     //////////////////////////
     // Errors
@@ -28,11 +27,16 @@ public class Constants {
     public static final String ERR_RATE_LIMIT_EXCEEDED = "Rate limit exceeded";
     public static final String ERR_REQUEST_FWD_FAIL = "Could not forward request: %s";
     public static final String ERR_SVC_NOT_AVAILABLE = "Service Not Available";
+    public static final String ERR_NO_PROXY_TARGET = "No valid proxy target URL available";
+    public static final String ERR_PARSE_TARG_FAIL = "Failed to parse %s environment variable";
+    public static final String ERR_NO_CLIENT_IP = "Client IP could not be obtained, falling back to round-robin";
     
     //////////////////////////
     // Environment variables
     //////////////////////////
     public static final String ENV_PROXY_TARGET_URL = "PROXY_TARGET_URL";
+    
+    public static final String ENV_LB_MODE = "LOAD_BALANCE_MODE";
     
     public static final String ENV_DB_TYPE = "DB_TYPE";
     public static final String ENV_DB_HOST = "DB_HOST";
@@ -43,7 +47,6 @@ public class Constants {
     public static final String ENV_DB_TABLE = "TABLE_NAME";
     public static final String ENV_DB_COLUMN = "COLUMN_NAME";
 
-    
     public static final String ENV_RATE_LIMIT_ENABLED = "RATE_LIMIT_ENABLED";
     public static final String ENV_RATE_LIMIT_RATE = "RATE_LIMIT_RATE";
     public static final String ENV_RATE_LIMIT_TIMEOUT = "RATE_LIMIT_TIMEOUT";
@@ -60,4 +63,7 @@ public class Constants {
     
     public static final String OPT_STR_TRUE = "true";
     public static final String OPT_STR_FALSE = "false";
+    
+    public static final String OPT_LB_RR = "round-robin";
+    public static final String OPT_LB_IPH = "ip-hash";
 }
