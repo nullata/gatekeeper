@@ -1,7 +1,7 @@
 # Gatekeeper Proxy Server
 
 ## Overview
-Gatekeeper is a proxy server application that ensures secure and controlled access to backend services. It enforces rate limiting, HTTP header key validation, and environment validation against a database before forwarding requests to a target URL. If a request key cannot be validated, Gatekeeper will return a `401 Unauthorized` response.
+Gatekeeper is a proxy server application that ensures secure and controlled access to backend services. It enforces rate limiting, HTTP header key validation against a database before forwarding requests to a target URL. If a request key cannot be validated, Gatekeeper will return a `401 Unauthorized` response.
 
 ## Features
 - **HTTP Header Key Validation**: Ensures only requests with valid keys in the HTTP header are allowed to connect to the proxied target address.
