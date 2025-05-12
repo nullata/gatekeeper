@@ -18,7 +18,7 @@ validateVar "DB_PASSWORD"
 validateVar "TABLE_NAME"
 validateVar "COLUMN_NAME"
 
-JAR_FILE=/gatekeeper/Gatekeeper-0.0.1-SNAPSHOT.jar
+JAR_FILE=/gatekeeper/app.jar
 
 LOG_TS=$(date +%d-%m-%Y--%H-%M-%S)
 LOG_FILE=/var/log/gatekeeper/${LOG_TS}--gatekeeper.log
